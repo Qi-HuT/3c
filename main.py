@@ -11,6 +11,7 @@ def main():
     data_iter = Data.DataLoader(dataset, batch_size=10, shuffle=True)
     for item in data_iter:
         print(item[0].size())
+        print(len(item))
 
 
 if __name__ == '__main__':
