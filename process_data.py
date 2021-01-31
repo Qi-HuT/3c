@@ -44,6 +44,7 @@ def strtolist():
     # taskA_data = None
     df = pd.read_csv(taskA_data, sep=',')
     df = df.sample(frac=1).reset_index(drop=True)
+    print(df.shape)
     # df = df.head()
     # print(df['citation_context'])
     # for context in df['citation_context']: # 只是遍历其中一列的值
@@ -71,15 +72,24 @@ def loadtestdata():
     print('Loading test data')
     data_path = Path('/home/g19tka13/Downloads/data/3C')
     taskA_test_data = data_path / 'taskA/test.csv'
-    test_df = pd.read_csv(taskA_test_data, sep=',').merge(pd.read_csv(str(taskA_test_data).replace('test', 'sample_submission'), nrows=100), on='unique_id')
+    test_df = pd.read_csv(taskA_test_data, sep=',').merge(pd.read_csv(str(taskA_test_data).replace('test', 'sample_submission')), on='unique_id')
     test_df = test_df.sample(frac=1).reset_index(drop=True)
+    print(test_df.shape)
     # test_df = test_df.loc[test_df['citation_class_label'] == 0].reset_index(drop=True)  # drop去除原来的索引
     test_df_header = test_df.columns
     test_data = pd.DataFrame(columns=list(test_df_header))
+    label = ['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses']
     for index, raw in test_df.iterrows():
+        label_word = str(label[raw['citation_class_label']])
+        citation_text = re.sub(r"#AUTHOR_TAG", label_word, raw['citation_context'].lower())
+        citation_text = nltk.word_tokenize(citation_text)
+        # print(label_word)
         test_data.loc[index] = {"unique_id": raw['unique_id'], 'core_id': raw['core_id'], 'citing_title': raw['citing_title'],
                                 'citing_author': raw['citing_author'], 'cited_title': raw['cited_title'], 'cited_author': raw['cited_author'],
-                                'citation_context': nltk.word_tokenize(raw['citation_context'].lower()), 'citation_class_label': raw['citation_class_label']}
+                                # 'citation_context': nltk.word_tokenize(raw['citation_context'].lower()), 'citation_class_label': raw['citation_class_label']}
+                                'citation_context': citation_text,
+                                'citation_class_label': raw['citation_class_label']}
+
         # remodel_sentence(raw['citation_context']).split()
     return test_data
 
@@ -91,13 +101,72 @@ def count_all_words(data):
     return words
 
 
+# def assemble(data, vocabulary, num):
+#
+#     '''
+#         将每个句子中的每个单词映射成词汇表中单词对应的id  word->id
+#         同时将sentence和label和sentence_len组装起来方便载入。
+#     '''
+#     if num == 1:
+#         text_data = data['citation_context']
+#         label_data = data['citation_class_label']
+#         print('train{}'.format(collections.Counter(label_data)))
+#         num_text = len(text_data)
+#         text_len = np.array([len(sentence) for sentence in text_data])
+#         max_text_len = max(text_len)
+#         train_sen_len = []
+#         val_sen_len = []
+#         train_label = []
+#         val_label = []
+#         # wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([len(text_data), max_text_len], dtype=np.int64)  # word_to_index
+#         train_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([int(num_text * 0.8), max_text_len], dtype=np.int64)  # word_to_index
+#         val_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([int(num_text * 0.2), max_text_len], dtype=np.int64)
+#         for i in range(len(text_data)):
+#             if i <= int(num_text * 0.8) - 1:
+#                 train_sen_len.append(len(text_data[i]))
+#                 train_label.append(label_data[i])
+#                 train_wtoi_matrix[i, :len(text_data[i])] = [
+#                     vocabulary.stoi[word] if word in vocabulary.stoi else vocabulary.stoi['<unk>']
+#                     for word in text_data[i]]
+#             else:
+#                 val_sen_len.append(len(text_data[i]))
+#                 val_label.append(label_data[i])
+#                 val_wtoi_matrix[i - int(num_text * 0.8), :len(text_data[i])] = [
+#                     vocabulary.stoi[word] if word in vocabulary.stoi else vocabulary.stoi['<unk>']
+#                     for word in text_data[i]]
+#             # j += 1
+#             # if j > 49:
+#             #     break
+#
+#         # return wtoi_matrix
+#         train_iter = Data.TensorDataset(torch.from_numpy(train_wtoi_matrix), torch.Tensor(train_sen_len), torch.Tensor(train_label))
+#         val_iter = Data.TensorDataset(torch.from_numpy(val_wtoi_matrix), torch.Tensor(val_sen_len), torch.Tensor(val_label))
+#         # return (train_iter, val_iter) if num == 1 else False
+#         return train_iter, val_iter
+#     else:
+#         text_data = data['citation_context']
+#         label_data = data['citation_class_label']
+#         print('test{}'.format(collections.Counter(label_data)))
+#         text_len = np.array([len(sentence) for sentence in text_data])
+#         max_text_len = max(text_len)
+#         test_sen_len = []
+#         test_label = []
+#         test_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([len(text_data), max_text_len], dtype=np.int64)
+#         for i in range(len(text_data)):
+#             test_sen_len.append(len(text_data[i]))
+#             test_label.append(label_data[i])
+#             test_wtoi_matrix[i, :len(text_data[i])] = [vocabulary.stoi[word] if word in vocabulary.stoi else vocabulary.stoi['<unk>']
+#                                                        for word in text_data[i]]
+#         test_iter = Data.TensorDataset(torch.from_numpy(test_wtoi_matrix), torch.Tensor(test_sen_len), torch.Tensor(test_label))
+#         return test_iter
+
 def assemble(data, vocabulary, num):
 
     '''
         将每个句子中的每个单词映射成词汇表中单词对应的id  word->id
         同时将sentence和label和sentence_len组装起来方便载入。
     '''
-
+    label = ['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses']
     if num == 1:
         text_data = data['citation_context']
         label_data = data['citation_class_label']
@@ -111,11 +180,14 @@ def assemble(data, vocabulary, num):
         val_label = []
         # wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([len(text_data), max_text_len], dtype=np.int64)  # word_to_index
         train_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([int(num_text * 0.8), max_text_len], dtype=np.int64)  # word_to_index
+        label_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([int(num_text * 0.8), 1], dtype=np.int64)
         val_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([int(num_text * 0.2), max_text_len], dtype=np.int64)
         for i in range(len(text_data)):
             if i <= int(num_text * 0.8) - 1:
                 train_sen_len.append(len(text_data[i]))
                 train_label.append(label_data[i])
+                label_wtoi_matrix[i, :1] = [vocabulary.stoi[label[label_data[i]]] if label[label_data[i]] in vocabulary.stoi else vocabulary.stoi['<unk>']]
+                                            # for word in label[label_data[i]]]
                 train_wtoi_matrix[i, :len(text_data[i])] = [
                     vocabulary.stoi[word] if word in vocabulary.stoi else vocabulary.stoi['<unk>']
                     for word in text_data[i]]
@@ -130,7 +202,7 @@ def assemble(data, vocabulary, num):
             #     break
 
         # return wtoi_matrix
-        train_iter = Data.TensorDataset(torch.from_numpy(train_wtoi_matrix), torch.Tensor(train_sen_len), torch.Tensor(train_label))
+        train_iter = Data.TensorDataset(torch.from_numpy(train_wtoi_matrix), torch.Tensor(train_sen_len), torch.Tensor(train_label), torch.from_numpy(label_wtoi_matrix))
         val_iter = Data.TensorDataset(torch.from_numpy(val_wtoi_matrix), torch.Tensor(val_sen_len), torch.Tensor(val_label))
         # return (train_iter, val_iter) if num == 1 else False
         return train_iter, val_iter
@@ -151,8 +223,16 @@ def assemble(data, vocabulary, num):
         test_iter = Data.TensorDataset(torch.from_numpy(test_wtoi_matrix), torch.Tensor(test_sen_len), torch.Tensor(test_label))
         return test_iter
 
+# def labeltoid(label, vocabulary):
+#     label_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([len(label), 1], dtype=np.int64)
+#     for i in range(len(label)):
+#         label_wtoi_matrix[i, :] = [vocabulary.stoi[word] if word in vocabulary.stoi else vocabulary.stoi['<unk>']
+#                                    for word in label]
+#     return label_wtoi_matrix
+
 
 def load_word_vector(train_data, test_data):
+    label_vector = pd.Series(['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses'])
     # Download word vector
     print('Loading word vectors')
     path = os.path.join('/home/g19tka13/Downloads/data/wordvector', 'wiki.en.vec')
@@ -163,7 +243,7 @@ def load_word_vector(train_data, test_data):
                                    path)
     vectors = Vectors('wiki.en.vec', cache='/home/g19tka13/Downloads/data/wordvector')
     # print(train_data['citation_context'].append(test_data['citation_context'], ignore_index=True))
-    vocab = Vocab(collections.Counter(count_all_words(train_data['citation_context'].append(test_data['citation_context'], ignore_index=True))), specials=['<pad>', '<unk>'], vectors=vectors)
+    vocab = Vocab(collections.Counter(count_all_words(train_data['citation_context'].append(test_data['citation_context'], ignore_index=True).append(label_vector, ignore_index=True))), specials=['<pad>', '<unk>'], vectors=vectors)
     return vocab
 
 

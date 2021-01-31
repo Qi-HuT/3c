@@ -14,30 +14,47 @@ def main():
     # dir_path = Path('/home/g19tka13/Downloads/data/3C')
     # data_path = dir_path / 'taskA/train.csv'
     train_iter, val_iter, test_iter, vocab = load_data()
-    train_iter = Data.DataLoader(train_iter, batch_size=5, shuffle=True)
-    val_iter = Data.DataLoader(val_iter, batch_size=5, shuffle=True)
-    test_iter = Data.DataLoader(test_iter, batch_size=5, shuffle=True)
+    train_iter = Data.DataLoader(train_iter, batch_size=10, shuffle=True)
+    val_iter = Data.DataLoader(val_iter, batch_size=10, shuffle=True)
+    test_iter = Data.DataLoader(test_iter, batch_size=10, shuffle=True)
     vocab_size = vocab.vectors.size()
     print('Total num. of words: {}, word vector dimension: {}'.format(
         vocab_size[0],
         vocab_size[1]))
     model = LSTM(vocab_size[0], vocab_size[1], hidden_size=100, num_layers=2, batch=10)
     model.embedding.weight.data = vocab.vectors
+    model.embedding.weight.requires_grad = False
     print(model)
     # print(model.parameters())
     # for parameter in model.parameters():
     #     print(parameter)
-    optimizer = optim.Adam(model.parameters(), lr=0.001)
-    n_epoch = 100
+    optimizer = optim.Adam(model.parameters(), lr=0.0005)
+    n_epoch = 50
     best_val_f1 = 0
-    loss_fn = nn.CrossEntropyLoss()
-    model.train()
+    loss_cs = nn.CrossEntropyLoss()
+    # loss_fnc = nn.CosineEmbeddingLoss()
+    loss_mes = nn.MSELoss()
+    # y = torch.ones((10, 1)).long()
     for epoch in range(n_epoch):
+        # model.train放在哪参考网址 https://blog.csdn.net/andyL_05/article/details/107004401
+        model.train()
         for item_idx, item in enumerate(train_iter, 0):
             label = item[2]
+            # label_word_id = item[3]
+            # print(label)
+            # label_numpy = label.long()
+            # one_hot = np.zeros((10, 6), dtype=np.int64)
+            # for i in range(len(label)):
+            #     one_hot[i][label_numpy[i]] = label_numpy[i] * 10
+            # print(one_hot)
             optimizer.zero_grad()
+            # out, label_vector = model(item, label_word_id)
             out = model(item)
-            loss = loss_fn(out, label.long())
+            # loss_CS = loss_cs(out, label.long())
+            loss = loss_cs(out, label.long())
+            # loss_MES = loss_mes(out,  label_vector)
+            # loss = loss_fnc(out, torch.Tensor(one_hot), y)
+            # loss = loss_CS + loss_MES
             loss.backward()
             # print(model.lstm.all_weights.shape)
             # print(model.lstm.)
@@ -49,9 +66,8 @@ def main():
                 # print(train_y_pre, label.long())
                 f1 = f1_score(label.long(), train_y_pre, average='macro')
                 # print(train_y_pre, label)
-                print('epoch: %d \t item_idx: %d \t loss: %.4f \t train acc: %.4f' % (epoch, item_idx, loss, f1))
+                print('epoch: %d \t item_idx: %d \t loss: %.4f \t f1: %.4f' % (epoch, item_idx, loss, f1))
 
-        val_f1 = []
         val_pre_label = []
         val_y_label = []
         if (epoch+1) % 5 == 0:

@@ -11,6 +11,7 @@ from pathlib import Path
 from process_data import remodel_sentence
 from sklearn.metrics import f1_score
 import nltk
+import re
 
 
 # text = "Sentiment analysis is a challenging subject in machine learning.\
@@ -82,6 +83,12 @@ data_path = data / 'taskA/test.csv'
 da = pd.read_csv(data_path).merge(pd.read_csv(str(data_path).replace('test', 'sample_submission')), on='unique_id')
 dat = pd.read_csv(str(data_path).replace('test', 'train'))
 print(collections.Counter(dat['citation_class_label']))
+for index, row in dat.iterrows():
+    pass
+str = 'They usually generate user models that describe user interests according to a set of features #AUTHOR_TAG'
+repla = '12312312312312'
+str = re.sub(r"#AUTHOR_TAG", repla, str)
+print(str)
 # print(da['citation_context'])
 # dcon = pd.concat([da['citation_context'], dat['citation_context']], ignore_index=True)
 # dte = da['citation_context'].append(dat['citation_context'],ignore_index=True)
@@ -170,3 +177,35 @@ a = torch.Tensor([3., 1., 0., 5., 0., 1., 4., 4., 5., 1.]).long()
 b = torch.Tensor([1, 0, 1, 0, 5, 5, 5, 4, 0, 0])
 out = f1_score(a, b, average='macro')
 print(out)
+
+if torch.cuda.is_available():
+    print(torch.cuda.device_count())
+    print(torch.cuda.get_device_name())
+x1 = torch.tensor([[0.3, 0.5, 0.7], [0.3, 0.5, 0.7]])
+x2 = torch.tensor([[0.1, 0.3, 0.5], [0.1, 0.3, 0.5]])
+target = torch.tensor([[1, -1]], dtype=torch.float)
+loss_f = nn.CosineEmbeddingLoss(margin=0., reduction='none')
+
+loss = loss_f(x1, x2, target)
+
+print("Cosine Embedding Loss", loss)
+
+margin = 0.
+
+
+print(torch.ones(5,1).long())
+print(np.ones([3, 2])[1, :])
+label = ['a', 'b']
+print(label[0])
+matrix = np.zeros((6, 6), dtype=np.int64)
+print(matrix)
+la = [2 ,3 ,4,0,5, 1]
+for i in range(6):
+    matrix[i][la[i]] = 1
+print(matrix)
+
+label = torch.empty(3, dtype=torch.long).random_(5)
+print(label)
+
+emb = nn.Embedding(10 ,100)
+print(emb.weight.requires_grad)

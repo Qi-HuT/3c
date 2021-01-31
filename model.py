@@ -11,11 +11,12 @@ class LSTM(nn.Module):
         super(LSTM, self).__init__()
         self.num_layers = num_layers
         self.batch = batch
-        self.embedding = nn.Embedding(vocab_size, vector_len)
+        self.embedding = nn.Embedding(vocab_size, vector_len)  # Embedding.weight.requires_grad default: True
         self.hidden_size = hidden_size
         self.lstm = nn.LSTM(input_size=vector_len, hidden_size=hidden_size, num_layers=self.num_layers,
                             batch_first=True, bidirectional=False, dropout=0.25)
         self.linear = nn.Linear(hidden_size, 6)
+        self.label_word_linear = nn.Linear(vector_len, 6)
         # self.drop = nn.Dropout(0.5)
         # self.softmax = F.softmax()
 
@@ -33,10 +34,15 @@ class LSTM(nn.Module):
                 torch.zeros((self.num_layers * 2, self.batch, self.hidden_size), requires_grad=True)) \
             if bidirectional else (torch.zeros((self.num_layers, self.batch, self.hidden_size), requires_grad=True),
                                    torch.zeros((self.num_layers, self.batch, self.hidden_size), requires_grad=True))
+
     def forward(self, data):
             word_id = data[0]
             sen_len = data[1]
+            # print(90*'*', self.embedding.weight.requires_grad)  # True
             word_vector = self.embedding(word_id)  # [batch_size, seq_len, embedding_size]
+            # print('=============================',word_vector.shape)
+            # if label_word_id is not None:
+            #     label_vector = self.embedding(label_word_id)
             # print(word_vector.shape)
             h0, c0 = self.init_hidden(False)
             # print(word_vector.shape)
@@ -64,6 +70,13 @@ class LSTM(nn.Module):
             out_len = out_len.repeat(1, 1, self.hidden_size)
             out = torch.gather(out, 1, out_len)
             out = torch.squeeze(out, dim=1)
+            # if self.training:
+            #     label_vector = self.label_word_linear(torch.squeeze(label_vector))
+            #     out = self.linear(out)
+            #     return out, label_vector
+            # else:
+            #     out = self.linear(out)
+
             out = self.linear(out)
             # out = self.drop(out)
             return out
