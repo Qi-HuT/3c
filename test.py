@@ -82,7 +82,9 @@ data_path = data / 'taskA/test.csv'
 # da = pd.read_csv('/home/g19tka13/Downloads/data/3C/taskA/test.csv', sep=',')
 da = pd.read_csv(data_path).merge(pd.read_csv(str(data_path).replace('test', 'sample_submission')), on='unique_id')
 dat = pd.read_csv(str(data_path).replace('test', 'train'))
-print(collections.Counter(dat['citation_class_label']))
+print(dat.shape[0])
+count = collections.Counter(dat['citation_class_label'])
+print(count)
 for index, row in dat.iterrows():
     pass
 str = 'They usually generate user models that describe user interests according to a set of features #AUTHOR_TAG'
@@ -209,3 +211,12 @@ print(label)
 
 emb = nn.Embedding(10 ,100)
 print(emb.weight.requires_grad)
+
+a = np.zeros(10, dtype=np.int64)
+a[5] = 8
+print(a)
+b = '%.4f' % 0.003406789
+print(b)
+t = np.zeros(10, dtype=np.float32)
+t[5] = 8
+print(np.flipud(t))

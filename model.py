@@ -70,7 +70,7 @@ class LSTM(nn.Module):
             out_len = out_len.repeat(1, 1, self.hidden_size)
             out = torch.gather(out, 1, out_len)
             out = torch.squeeze(out, dim=1)
-            # if self.training:
+            # if self.training:  model是在train还是eval可以用这个判断。
             #     label_vector = self.label_word_linear(torch.squeeze(label_vector))
             #     out = self.linear(out)
             #     return out, label_vector

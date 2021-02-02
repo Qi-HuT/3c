@@ -44,6 +44,7 @@ def strtolist():
     # taskA_data = None
     df = pd.read_csv(taskA_data, sep=',')
     df = df.sample(frac=1).reset_index(drop=True)
+    total_instance_num = float(df.shape[0])
     print(df.shape)
     # df = df.head()
     # print(df['citation_context'])
@@ -52,6 +53,12 @@ def strtolist():
     df_header = df.columns
     train_data = pd.DataFrame(columns=list(df_header))
     # class_array = np.zeros(6, dtype=np.int64)
+    class_num = collections.Counter(df['citation_class_label'])
+    weighted = np.zeros(6, dtype=np.float32)
+    # 保留小数位数 使用%.2f，round函数或者float函数。假设要保留两位小数
+    # round(num, 2) || '%.2f' % num || float('%.2f' % num)
+    for i in range(6):
+        weighted[i] = np.log((total_instance_num - class_num[i]) / class_num[i]) + 1
     for index, raw in df.iterrows():
         # print(getattr(raw, 'citation_context').split())
         # print(remodel_sentence(getattr(raw, 'citation_context')).split())
@@ -59,13 +66,14 @@ def strtolist():
         # print(remodel_sentence(raw['citation_context']).split())
         # df.loc[index, 'citation_context'] = remodel_sentence(raw['citation_context']).split()  # 修改值错误,因为两者长度不一致.
         # class_array[raw['citation_class_label']] = 1
+        # if raw['citation_class_label'] not in
         train_data.loc[index] = {"unique_id": raw['unique_id'], 'core_id': raw['core_id'], 'citing_title': raw['citing_title'],
                                  'citing_author': raw['citing_author'], 'cited_title': raw['cited_title'], 'cited_author': raw['cited_author'],
                                  'citation_context': nltk.word_tokenize(raw['citation_context'].lower()), 'citation_class_label': raw['citation_class_label']}
         # class_array[raw['citation_class_label']] = 0
         # print(remodel_sentence(raw['citation_context']))
         # print(nltk.word_tokenize(getattr(raw, 'citation_context')))
-    return train_data
+    return train_data, weighted
 
 
 def loadtestdata():
@@ -248,12 +256,12 @@ def load_word_vector(train_data, test_data):
 
 
 def load_data():
-    train_data = strtolist()
+    train_data, weighted = strtolist()
     test_data = loadtestdata()
     vocab = load_word_vector(train_data, test_data)
     train_iter, val_iter = assemble(train_data, vocab, 1)
     test_iter = assemble(test_data, vocab, 0)
-    return train_iter, val_iter, test_iter, vocab
+    return train_iter, val_iter, test_iter, vocab, weighted
 
 
 

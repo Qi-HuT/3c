@@ -13,7 +13,9 @@ def main():
     model_path = './model.pth'
     # dir_path = Path('/home/g19tka13/Downloads/data/3C')
     # data_path = dir_path / 'taskA/train.csv'
-    train_iter, val_iter, test_iter, vocab = load_data()
+    train_iter, val_iter, test_iter, vocab, weighted = load_data()
+    # weight = np.flipud(weighted.copy())
+    weighted = torch.tensor(weighted)
     train_iter = Data.DataLoader(train_iter, batch_size=10, shuffle=True)
     val_iter = Data.DataLoader(val_iter, batch_size=10, shuffle=True)
     test_iter = Data.DataLoader(test_iter, batch_size=10, shuffle=True)
@@ -31,7 +33,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.0005)
     n_epoch = 50
     best_val_f1 = 0
-    loss_cs = nn.CrossEntropyLoss()
+    loss_cs = nn.CrossEntropyLoss(weight=weighted)
     # loss_fnc = nn.CosineEmbeddingLoss()
     loss_mes = nn.MSELoss()
     # y = torch.ones((10, 1)).long()
@@ -40,6 +42,9 @@ def main():
         model.train()
         for item_idx, item in enumerate(train_iter, 0):
             label = item[2]
+            batch_weighted = torch.zeros(10, dtype=torch.float32)
+            for i in range(10):
+                batch_weighted[i] = weighted[label[i].int()]
             # label_word_id = item[3]
             # print(label)
             # label_numpy = label.long()
@@ -60,7 +65,7 @@ def main():
             # print(model.lstm.)
             optimizer.step()
             if (item_idx + 1) % 5 == 0:
-                _, train_y_pre = torch.max(out, 1)  # max函数有两个返回值，第一个是最大值的list，第二个是值对应的位置
+                _, train_y_pre = torch.max(out, 1)  # max函数有两个返回值(此处out是二维数组)第一个是最大值的list，第二个是值对应的位置
 
                 # acc = torch.mean((torch.tensor(train_y_pre == label.long(), dtype=torch.float)))
                 # print(train_y_pre, label.long())

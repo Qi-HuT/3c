@@ -18,6 +18,7 @@ for path in second_path:
 for pathlist in third_path:
     for path in pathlist:
         file_path = root_path / path
+        print(10*'*',file_path)
         with open(file_path, 'r') as f:
             data_dict = json.load(f)
             # citation_index = json['citation_contexts'][1]
