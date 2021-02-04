@@ -5,6 +5,7 @@ import torch.autograd as autograd
 # import torch.nn.functional as F
 import torch.nn.utils.rnn as rnn_utils
 
+
 class LSTM(nn.Module):
 
     def __init__(self, vocab_size, vector_len, hidden_size, num_layers, batch):
@@ -41,9 +42,10 @@ class LSTM(nn.Module):
             # print(90*'*', self.embedding.weight.requires_grad)  # True
             word_vector = self.embedding(word_id)  # [batch_size, seq_len, embedding_size]
             # print('=============================',word_vector.shape)
-            # if label_word_id is not None:
-            #     label_vector = self.embedding(label_word_id)
             # print(word_vector.shape)
+            # if self.training:
+            #     label_word_id = torch.tensor(label_word_id)
+            #     label_vector = self.embedding(label_word_id)
             h0, c0 = self.init_hidden(False)
             # print(word_vector.shape)
             word_vector = rnn_utils.pack_padded_sequence(word_vector, lengths=sen_len, batch_first=True, enforce_sorted=False)
@@ -70,14 +72,14 @@ class LSTM(nn.Module):
             out_len = out_len.repeat(1, 1, self.hidden_size)
             out = torch.gather(out, 1, out_len)
             out = torch.squeeze(out, dim=1)
-            # if self.training:  model是在train还是eval可以用这个判断。
-            #     label_vector = self.label_word_linear(torch.squeeze(label_vector))
+            # if self.training:  # model是在train还是eval可以用这个判断。
+            #     label_out = self.label_word_linear(label_vector)
             #     out = self.linear(out)
-            #     return out, label_vector
+            #     return out, label_out
             # else:
-            #     out = self.linear(out)
-
             out = self.linear(out)
+
+            # out = self.linear(out)
             # out = self.drop(out)
             return out
 

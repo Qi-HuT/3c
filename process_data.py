@@ -53,12 +53,12 @@ def strtolist():
     df_header = df.columns
     train_data = pd.DataFrame(columns=list(df_header))
     # class_array = np.zeros(6, dtype=np.int64)
-    class_num = collections.Counter(df['citation_class_label'])
+    class_num = collections.Counter(df['citation_class_label'])  # Counter.items
     weighted = np.zeros(6, dtype=np.float32)
     # 保留小数位数 使用%.2f，round函数或者float函数。假设要保留两位小数
     # round(num, 2) || '%.2f' % num || float('%.2f' % num)
     for i in range(6):
-        weighted[i] = np.log((total_instance_num - class_num[i]) / class_num[i]) + 1
+        weighted[i] = np.log10((total_instance_num - class_num[i]) / class_num[i]) + 1
     for index, raw in df.iterrows():
         # print(getattr(raw, 'citation_context').split())
         # print(remodel_sentence(getattr(raw, 'citation_context')).split())
@@ -213,7 +213,7 @@ def assemble(data, vocabulary, num):
         train_iter = Data.TensorDataset(torch.from_numpy(train_wtoi_matrix), torch.Tensor(train_sen_len), torch.Tensor(train_label), torch.from_numpy(label_wtoi_matrix))
         val_iter = Data.TensorDataset(torch.from_numpy(val_wtoi_matrix), torch.Tensor(val_sen_len), torch.Tensor(val_label))
         # return (train_iter, val_iter) if num == 1 else False
-        return train_iter, val_iter
+        return train_iter, val_iter, np.unique(label_wtoi_matrix)
     else:
         text_data = data['citation_context']
         label_data = data['citation_class_label']
@@ -259,9 +259,9 @@ def load_data():
     train_data, weighted = strtolist()
     test_data = loadtestdata()
     vocab = load_word_vector(train_data, test_data)
-    train_iter, val_iter = assemble(train_data, vocab, 1)
+    train_iter, val_iter, label_word_id = assemble(train_data, vocab, 1)
     test_iter = assemble(test_data, vocab, 0)
-    return train_iter, val_iter, test_iter, vocab, weighted
+    return train_iter, val_iter, test_iter, vocab, weighted, label_word_id
 
 
 

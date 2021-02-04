@@ -5,6 +5,7 @@ import torch.utils.data as Data
 from model import LSTM
 import torch.optim as optim
 import torch.nn as nn
+import torch.nn.functional as F
 import numpy as np
 from sklearn.metrics import f1_score
 
@@ -13,9 +14,8 @@ def main():
     model_path = './model.pth'
     # dir_path = Path('/home/g19tka13/Downloads/data/3C')
     # data_path = dir_path / 'taskA/train.csv'
-    train_iter, val_iter, test_iter, vocab, weighted = load_data()
-    # weight = np.flipud(weighted.copy())
-    weighted = torch.tensor(weighted)
+    train_iter, val_iter, test_iter, vocab, weight, label_word_id = load_data()
+    weight = torch.tensor(weight)
     train_iter = Data.DataLoader(train_iter, batch_size=10, shuffle=True)
     val_iter = Data.DataLoader(val_iter, batch_size=10, shuffle=True)
     test_iter = Data.DataLoader(test_iter, batch_size=10, shuffle=True)
@@ -33,33 +33,38 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=0.0005)
     n_epoch = 50
     best_val_f1 = 0
-    loss_cs = nn.CrossEntropyLoss(weight=weighted)
+    # nn.CrossEntropyLoss you will give your weights only once while creating the module
+    # loss_cs = nn.CrossEntropyLoss(weight=weight)
     # loss_fnc = nn.CosineEmbeddingLoss()
-    loss_mes = nn.MSELoss()
-    # y = torch.ones((10, 1)).long()
+    # loss_mes = nn.MSELoss()
+    y = torch.ones(1).long()
     for epoch in range(n_epoch):
         # model.train放在哪参考网址 https://blog.csdn.net/andyL_05/article/details/107004401
         model.train()
         for item_idx, item in enumerate(train_iter, 0):
             label = item[2]
-            batch_weighted = torch.zeros(10, dtype=torch.float32)
-            for i in range(10):
-                batch_weighted[i] = weighted[label[i].int()]
-            # label_word_id = item[3]
-            # print(label)
-            # label_numpy = label.long()
-            # one_hot = np.zeros((10, 6), dtype=np.int64)
-            # for i in range(len(label)):
-            #     one_hot[i][label_numpy[i]] = label_numpy[i] * 10
-            # print(one_hot)
+            unique_num, count = torch.unique(label, return_counts=True)  # default sorted=True
+            unique_num = unique_num.tolist()
+            # print(unique_num, count)
+            real_weight = torch.ones(6, dtype=torch.float)
+            for i in range(6):
+                if i in unique_num:
+                    idx = unique_num.index(i)
+                    real_weight[i] = 1 / np.log(1.02 + count[idx] / 10)
+                else:
+                    real_weight[i] = 1 / np.log(2.02)
             optimizer.zero_grad()
-            # out, label_vector = model(item, label_word_id)
             out = model(item)
-            # loss_CS = loss_cs(out, label.long())
-            loss = loss_cs(out, label.long())
+            # label_pred = KMeans(n_clusters=6, init=label_out).fit_predict(out)
+            # fixed weight result=0.1716
+            # loss = F.cross_entropy(out, label.long(), weight=weight)
+            # real time weight calculation
+            loss = F.cross_entropy(out, label.long(), weight=real_weight)
+            # nn.CosineEmbeddingLoss() 损失函数需要是二维矩阵，而不是一维的。
+            # loss = loss_fnc(torch.unsqueeze(label_pred, dim=0), torch.unsqueeze(label.long(), dim=0), y)
+            # loss = Variable(loss, requires_grad=True)
             # loss_MES = loss_mes(out,  label_vector)
             # loss = loss_fnc(out, torch.Tensor(one_hot), y)
-            # loss = loss_CS + loss_MES
             loss.backward()
             # print(model.lstm.all_weights.shape)
             # print(model.lstm.)

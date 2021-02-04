@@ -10,8 +10,11 @@ import collections
 from pathlib import Path
 from process_data import remodel_sentence
 from sklearn.metrics import f1_score
+from sklearn.cluster import KMeans
 import nltk
 import re
+import jsonlines
+import matplotlib.pyplot as plt
 
 
 # text = "Sentiment analysis is a challenging subject in machine learning.\
@@ -192,19 +195,6 @@ loss = loss_f(x1, x2, target)
 
 print("Cosine Embedding Loss", loss)
 
-margin = 0.
-
-
-print(torch.ones(5,1).long())
-print(np.ones([3, 2])[1, :])
-label = ['a', 'b']
-print(label[0])
-matrix = np.zeros((6, 6), dtype=np.int64)
-print(matrix)
-la = [2 ,3 ,4,0,5, 1]
-for i in range(6):
-    matrix[i][la[i]] = 1
-print(matrix)
 
 label = torch.empty(3, dtype=torch.long).random_(5)
 print(label)
@@ -212,11 +202,44 @@ print(label)
 emb = nn.Embedding(10 ,100)
 print(emb.weight.requires_grad)
 
-a = np.zeros(10, dtype=np.int64)
-a[5] = 8
-print(a)
-b = '%.4f' % 0.003406789
+jsonpath = "/home/g19tka13/Downloads/data/3C/scicite/train.jsonl"
+with jsonlines.open(jsonpath) as reader:
+    for row in reader:
+        if row['citingPaperId'] == '53698b91709112e5bb71eeeae94607db2aefc57c':
+            print(row)
+            print('true')
+
+# x = [[1, 2],
+#      [1, 1.5],
+#      [2, 3],
+#      [2, 4],
+#      [2, 5]]
+# x = np.array(x)
+# center = np.array([
+#           [2, 3],
+#           [1, 1]])
+# y_pred = KMeans(n_clusters=2, init=center).fit_predict(x)
+# print(y_pred)
+# plt.scatter(x[:, 0], x[:, 1], c=y_pred)
+# plt.show()
+matrix = np.ones(10)
+print(np.unique(matrix))
+b = torch.tensor(1)
 print(b)
-t = np.zeros(10, dtype=np.float32)
-t[5] = 8
-print(np.flipud(t))
+y = torch.ones(1).long()
+print(y)
+loss = nn.CosineEmbeddingLoss()
+a1 = torch.tensor(np.array([3, 4, 3, 0, 3, 1, 5, 2, 3, 0]))
+a1 = torch.unsqueeze(a1, dim=0)
+print(a1)
+a2 = torch.tensor(np.array([3, 4, 3, 0, 3, 1, 5, 3, 0]))
+if 5 in a2:
+    print('true')
+# print(loss(a1, a2, y))
+print(collections.Counter(np.array([3, 4, 3, 0, 3, 1, 5, 2, 3, 0]))[3])
+out, count = torch.unique(a2, return_counts=True)
+print(out)
+print(out[2])
+print(count)
+print(np.log(1.02))
+print(np.log(2.02))
