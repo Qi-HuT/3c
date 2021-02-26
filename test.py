@@ -8,12 +8,13 @@ import torch.nn.functional as F
 import pandas as pd
 import collections
 from pathlib import Path
-from process_data import remodel_sentence
+# from process_data import remodel_sentence
 from sklearn.metrics import f1_score
 from sklearn.cluster import KMeans
 import nltk
-import re
+# import findsenten
 import jsonlines
+import re
 import matplotlib.pyplot as plt
 
 
@@ -81,18 +82,20 @@ import matplotlib.pyplot as plt
 #         i = i + 1
 # print(raw.keys())
 data = Path('/home/g19tka13/Downloads/data/3C')
-data_path = data / 'taskA/test.csv'
+data_path = data / 'taskB/test.csv'
 # da = pd.read_csv('/home/g19tka13/Downloads/data/3C/taskA/test.csv', sep=',')
+test = pd.read_csv(data_path, sep='\t')
+print(90*'*',test.shape)
 da = pd.read_csv(data_path).merge(pd.read_csv(str(data_path).replace('test', 'sample_submission')), on='unique_id')
 dat = pd.read_csv(str(data_path).replace('test', 'train'))
 print(dat.shape[0])
-count = collections.Counter(dat['citation_class_label'])
-print(count)
+# count = collections.Counter(dat['citation_class_label'])
+# print(count)
 for index, row in dat.iterrows():
     pass
 str = 'They usually generate user models that describe user interests according to a set of features #AUTHOR_TAG'
 repla = '12312312312312'
-str = re.sub(r"#AUTHOR_TAG", repla, str)
+# str = findsenten.sub(r"#AUTHOR_TAG", repla, str)
 print(str)
 # print(da['citation_context'])
 # dcon = pd.concat([da['citation_context'], dat['citation_context']], ignore_index=True)
@@ -201,14 +204,23 @@ print(label)
 
 emb = nn.Embedding(10 ,100)
 print(emb.weight.requires_grad)
-
-jsonpath = "/home/g19tka13/Downloads/data/3C/scicite/train.jsonl"
-with jsonlines.open(jsonpath) as reader:
-    for row in reader:
-        if row['citingPaperId'] == '53698b91709112e5bb71eeeae94607db2aefc57c':
-            print(row)
-            print('true')
-
+# i = 0
+# jsonpath = "/home/g19tka13/Downloads/data/3C/CORE_paper_list/mash/acl-arc/train.jsonl"
+# section_name = {}
+# with jsonlines.open(jsonpath) as reader:
+#     for row in reader:
+#         # print(row.keys())
+#         print(row['section_title'])
+#         # print(row['section_name'])
+#         # if row['citingPaperId'] == '53698b91709112e5bb71eeeae94607db2aefc57c':
+#         #     print(row)
+#         #     print('true')
+#         # i = i + 1
+#         if row['section_name'] in section_name.keys():
+#             section_name[row['section_name']] += 1
+#         else:
+#             section_name[row['section_name']] = 1
+# print(section_name)
 # x = [[1, 2],
 #      [1, 1.5],
 #      [2, 3],
@@ -222,24 +234,44 @@ with jsonlines.open(jsonpath) as reader:
 # print(y_pred)
 # plt.scatter(x[:, 0], x[:, 1], c=y_pred)
 # plt.show()
-matrix = np.ones(10)
-print(np.unique(matrix))
-b = torch.tensor(1)
-print(b)
-y = torch.ones(1).long()
-print(y)
-loss = nn.CosineEmbeddingLoss()
-a1 = torch.tensor(np.array([3, 4, 3, 0, 3, 1, 5, 2, 3, 0]))
-a1 = torch.unsqueeze(a1, dim=0)
-print(a1)
-a2 = torch.tensor(np.array([3, 4, 3, 0, 3, 1, 5, 3, 0]))
-if 5 in a2:
-    print('true')
-# print(loss(a1, a2, y))
-print(collections.Counter(np.array([3, 4, 3, 0, 3, 1, 5, 2, 3, 0]))[3])
-out, count = torch.unique(a2, return_counts=True)
-print(out)
-print(out[2])
-print(count)
-print(np.log(1.02))
-print(np.log(2.02))
+# matrix = np.ones(10)
+# print(np.unique(matrix))
+# b = torch.tensor(1)
+# print(b)
+# y = torch.ones(1).long()
+# print(y)
+# loss = nn.CosineEmbeddingLoss()
+# a1 = torch.tensor(np.array([3, 4, 3, 0, 3, 1, 5, 2, 3, 0]))
+# a1 = torch.unsqueeze(a1, dim=0)
+# print(a1)
+# a2 = torch.tensor(np.array([3, 4, 3, 0, 3, 1, 5, 3, 0]))
+# if 5 in a2:
+#     print('true')
+# # print(loss(a1, a2, y))
+# print(collections.Counter(np.array([3, 4, 3, 0, 3, 1, 5, 2, 3, 0]))[3])
+# out, count = torch.unique(a2, return_counts=True)
+# print(out)
+# print(out[2])
+# print(count)
+# print(np.log(1.02))
+# print(np.log(2.02))
+
+
+# b = torch.zeros(5, 4, 3, 1)
+# a = torch.ones((1, 10))
+# print(a.softmax(dim=1))
+# print(b.shape)
+# c = b.softmax(dim=1)
+# print(c)
+
+a = 'CREATIVITY RESEARCH IS TYPICALLY FOCUSED'
+print(re.match(r'[0-9]\.*(\s*)[A-Za-z]', a))
+print(re.match(r'^([A-Z]+\s*){,4}[a-zA-Z]*', a))
+# b= '   '
+# print(len(b))
+# print(b.split(' '))
+
+# c = ['Methodology', '']
+# print(c[1].isspace())
+# section = list(filter(lambda q: re.match(r'^[A-Za-z]*$', q) and q != '', c))
+# print(section)

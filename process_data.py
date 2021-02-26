@@ -6,7 +6,7 @@ import json
 import os.path
 from pathlib import Path
 import nltk
-import re
+import findsenten
 from torchtext.vocab import Vocab, Vectors
 import collections
 import torch.nn as nn
@@ -16,20 +16,20 @@ import torch
 
 def remodel_sentence(sentence):
     # sentence = re.sub(r"#Author_Tag", "#Author#Tag", sentence)
-    sentence = re.sub(r"[^A-Za-z0-9(),:!?_\'\`#]", " ", sentence)
-    sentence = re.sub(r":", ' : ', sentence)
-    sentence = re.sub(r"\'s", " \'s", sentence)
-    sentence = re.sub(r"\'ve", " \'ve", sentence)
-    sentence = re.sub(r"n\'t", " n\'t", sentence)
-    sentence = re.sub(r"\'re", " \'re", sentence)
-    sentence = re.sub(r"\'d", " \'d", sentence)
-    sentence = re.sub(r"\'ll", " \'ll", sentence)
-    sentence = re.sub(r",", " , ", sentence)
-    sentence = re.sub(r"!", " ! ", sentence)
-    sentence = re.sub(r"\(", " ( ", sentence)
-    sentence = re.sub(r"\)", " ) ", sentence)
-    sentence = re.sub(r"\?", " ? ", sentence)
-    sentence = re.sub(r"\s{2,}", " ", sentence)
+    sentence = findsenten.sub(r"[^A-Za-z0-9(),:!?_\'\`#]", " ", sentence)
+    sentence = findsenten.sub(r":", ' : ', sentence)
+    sentence = findsenten.sub(r"\'s", " \'s", sentence)
+    sentence = findsenten.sub(r"\'ve", " \'ve", sentence)
+    sentence = findsenten.sub(r"n\'t", " n\'t", sentence)
+    sentence = findsenten.sub(r"\'re", " \'re", sentence)
+    sentence = findsenten.sub(r"\'d", " \'d", sentence)
+    sentence = findsenten.sub(r"\'ll", " \'ll", sentence)
+    sentence = findsenten.sub(r",", " , ", sentence)
+    sentence = findsenten.sub(r"!", " ! ", sentence)
+    sentence = findsenten.sub(r"\(", " ( ", sentence)
+    sentence = findsenten.sub(r"\)", " ) ", sentence)
+    sentence = findsenten.sub(r"\?", " ? ", sentence)
+    sentence = findsenten.sub(r"\s{2,}", " ", sentence)
     return sentence.lower()
 
 
@@ -89,7 +89,7 @@ def loadtestdata():
     label = ['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses']
     for index, raw in test_df.iterrows():
         label_word = str(label[raw['citation_class_label']])
-        citation_text = re.sub(r"#AUTHOR_TAG", label_word, raw['citation_context'].lower())
+        citation_text = findsenten.sub(r"#AUTHOR_TAG", label_word, raw['citation_context'].lower())
         citation_text = nltk.word_tokenize(citation_text)
         # print(label_word)
         test_data.loc[index] = {"unique_id": raw['unique_id'], 'core_id': raw['core_id'], 'citing_title': raw['citing_title'],
