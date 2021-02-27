@@ -53,7 +53,7 @@ for file in files:
     os.rename(oldname, newname)
     # shutil.move(str(path).replace('train_', ''), '/home/g19tka13/Downloads/data/3C/CORE_paper_list/train/{}'.format(str(file).replace('train_', '')))
 
-doc = Document(r'/home/g19tka13/Downloads/data/3C/CORE_paper_list/train/81605842.docx')
+doc = Document(r'/home/g19tka13/Downloads/data/3C/CORE_paper_list/train/81525093.docx')
 # str = '/home/g19tka13/Downloads/data/3C/CORE_paper_list/train_1683841.pdf'
 # fsize = os.path.getsize(str)
 # print(fsize)
@@ -67,10 +67,27 @@ for section in doc.sections:
     section.header.is_linked_to_previous = False
     section.footer.is_linked_to_previous = False
     # print(section.)
+paragraph = None
 for p in doc.paragraphs:
+    # split_list = p.text.split(' ')
+    if a is None:
+        a = p
+    else:
+        a.add_run(p.text)
+    # if 'Research Design' in p.text:
     split_list = p.text.split(' ')
-    if p.text.isupper() or re.match(r'[0-9]\.*[0-9]*\s*[A-Z][a-zA-Z]|[0-9]\s*[A-Z][a-zA-Z]|^\s+[A-Z]', p.text) or len(split_list) == 1:
-        print(p.text)
+    # if p.text.isupper() or re.match(r'[0-9]\.*[0-9]*\s*[A-Z][a-zA-Z]|[0-9]\s*[A-Z][a-zA-Z]', p.text) or len(split_list) == 1:
+    #     print(re.sub(r'[0-9]\.\s*|[0-9]\s*', '', p.text))
+    print(p.text)
+# print(18*'*')
+# print(a.text)
+# paragraph = re.sub(r'al\.', 'al', a.text)
+# sentence_list = re.split(r'[a-zA-Z]+\. ', paragraph)
+# for i in range(len(sentence_list)):
+#     # print(sentence_list[i])
+#     if 'Research Design' in sentence_list[i]:
+#         # if p.text.isupper() or re.match(r'[0-9]\.*[0-9]*\s*[A-Z][a-zA-Z]|[0-9]\s*[A-Z][a-zA-Z]|^\s+[A-Z]', p.text) or len(split_list) == 1:
+#         print(sentence_list[i])
     # if a is None:
     #     a = p
     # else:
