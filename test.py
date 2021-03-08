@@ -10,6 +10,7 @@ import collections
 from pathlib import Path
 # from process_data import remodel_sentence
 from sklearn.metrics import f1_score
+from sklearn.neural_network import MLPClassifier
 from sklearn.cluster import KMeans
 import nltk
 # import findsenten
@@ -81,22 +82,22 @@ import matplotlib.pyplot as plt
 #         raw = json.loads(line)
 #         i = i + 1
 # print(raw.keys())
-data = Path('/home/g19tka13/Downloads/data/3C')
-data_path = data / 'taskB/test.csv'
-# da = pd.read_csv('/home/g19tka13/Downloads/data/3C/taskA/test.csv', sep=',')
-test = pd.read_csv(data_path, sep='\t')
-print(90*'*',test.shape)
-da = pd.read_csv(data_path).merge(pd.read_csv(str(data_path).replace('test', 'sample_submission')), on='unique_id')
-dat = pd.read_csv(str(data_path).replace('test', 'train'))
-print(dat.shape[0])
-# count = collections.Counter(dat['citation_class_label'])
-# print(count)
-for index, row in dat.iterrows():
-    pass
-str = 'They usually generate user models that describe user interests according to a set of features #AUTHOR_TAG'
-repla = '12312312312312'
-# str = findsenten.sub(r"#AUTHOR_TAG", repla, str)
-print(str)
+# data = Path('/home/g19tka13/Downloads/data/3C')
+# data_path = data / 'taskB/test.csv'
+# # da = pd.read_csv('/home/g19tka13/Downloads/data/3C/taskA/test.csv', sep=',')
+# test = pd.read_csv(data_path, sep='\t')
+# print(90*'*',test.shape)
+# da = pd.read_csv(data_path).merge(pd.read_csv(str(data_path).replace('test', 'sample_submission')), on='unique_id')
+# dat = pd.read_csv(str(data_path).replace('test', 'train'))
+# print(dat.shape[0])
+# # count = collections.Counter(dat['citation_class_label'])
+# # print(count)
+# for index, row in dat.iterrows():
+#     pass
+# str = 'They usually generate user models that describe user interests according to a set of features #AUTHOR_TAG'
+# repla = '12312312312312'
+# # str = findsenten.sub(r"#AUTHOR_TAG", repla, str)
+# print(str)
 # print(da['citation_context'])
 # dcon = pd.concat([da['citation_context'], dat['citation_context']], ignore_index=True)
 # dte = da['citation_context'].append(dat['citation_context'],ignore_index=True)
@@ -205,7 +206,7 @@ print(label)
 emb = nn.Embedding(10 ,100)
 print(emb.weight.requires_grad)
 # i = 0
-# jsonpath = "/home/g19tka13/Downloads/data/3C/CORE_paper_list/mash/acl-arc/train.jsonl"
+# jsonpath = "/home/g19tka13/Downloads/data/3C/CORE_paper_list/mash/acl-arc/test.jsonl"
 # section_name = {}
 # with jsonlines.open(jsonpath) as reader:
 #     for row in reader:
@@ -275,3 +276,54 @@ print(re.match(r'^([A-Z]+\s*){,4}[a-zA-Z]*', a))
 # print(c[1].isspace())
 # section = list(filter(lambda q: re.match(r'^[A-Za-z]*$', q) and q != '', c))
 # print(section)
+
+# for i in range(4, 8):
+#     print(i)
+df = pd.DataFrame(np.arange(20).reshape(5, 4), columns=['a', 'b', 'c', 'd'], index=range(0, 5))
+print(df)
+df.loc[:, 'new'] = [1, 2, 3, 4, 5]
+print(df)
+a = df[df.index.isin([3, 4])]
+a['tt'] = [9 ,10]
+print(a)
+
+
+
+tensor_3d = torch.LongTensor([1, 2, 3, 4, 5, 6])
+tensor_3d = tensor_3d.view(6, 1, -1)
+cat = tensor_3d.repeat(1, 1, 6)
+print(cat)
+ten_list = torch.randn(6, 7, 6)
+print(ten_list)
+final_result = torch.gather(ten_list, 1, cat)
+print(torch.gather(ten_list, 1, cat), final_result.shape)
+print(torch.squeeze(final_result, dim=1), torch.squeeze(final_result, dim=1).shape)
+cut_test = torch.LongTensor([1, 2, 3, 4, 5, 6])
+print(cut_test - 1)
+t = []
+for i in range(6):
+    t.append([i])
+print(t)
+
+print(torch.cuda.is_available())
+x_cpu = torch.ones((3, 3))
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print("x_cpu:\ndevice: {} is_cuda: {} id: {}".format(x_cpu.device, x_cpu.is_cuda, id(x_cpu)))
+
+x_gpu = x_cpu.to(device)
+print("x_gpu:\ndevice: {} is_cuda: {} id: {}".format(x_gpu.device, x_gpu.is_cuda, id(x_gpu)))
+c = torch.LongTensor([1 ,2, 3, 4, 5])
+print(c.tolist())
+# a = None
+# for i in range(5):
+#     # if a is None:
+#     #     a = c
+#     # else:
+#
+#         a = torch.cat((a, c), 0)
+# print(a)
+
+testmodel = MLPClassifier(hidden_layer_sizes=(256, 256, 128))
+print(testmodel)
+
+print(torch.randn(1, 5, 5, 6, 4))
