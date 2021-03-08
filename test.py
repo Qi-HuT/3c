@@ -305,13 +305,13 @@ for i in range(6):
     t.append([i])
 print(t)
 
-print(torch.cuda.is_available())
-x_cpu = torch.ones((3, 3))
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print("x_cpu:\ndevice: {} is_cuda: {} id: {}".format(x_cpu.device, x_cpu.is_cuda, id(x_cpu)))
-
-x_gpu = x_cpu.to(device)
-print("x_gpu:\ndevice: {} is_cuda: {} id: {}".format(x_gpu.device, x_gpu.is_cuda, id(x_gpu)))
+# print(torch.cuda.is_available())
+# x_cpu = torch.ones((3, 3))
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# print("x_cpu:\ndevice: {} is_cuda: {} id: {}".format(x_cpu.device, x_cpu.is_cuda, id(x_cpu)))
+#
+# x_gpu = x_cpu.to(device)
+# print("x_gpu:\ndevice: {} is_cuda: {} id: {}".format(x_gpu.device, x_gpu.is_cuda, id(x_gpu)))
 c = torch.LongTensor([1 ,2, 3, 4, 5])
 print(c.tolist())
 # a = None
@@ -322,8 +322,14 @@ print(c.tolist())
 #
 #         a = torch.cat((a, c), 0)
 # print(a)
-
+print(torch.square(c))
 testmodel = MLPClassifier(hidden_layer_sizes=(256, 256, 128))
 print(testmodel)
 
-print(torch.randn(1, 5, 5, 6, 4))
+m = torch.randn(5, 16, 50, 100)
+cov = nn.Conv2d(16, 32, 2, stride=1)
+cov2 = nn.Conv2d(32, 256, (9, 9), stride=1)
+out = cov(m)
+out1 = cov2(out)
+print(out.shape)
+print(out1.shape)

@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 import torch.nn as nn
+import torch
+
+
+def squash(x, axis=-1):
+    x_squred = torch.square(x).sum(axis, keepdim=True)
+    scale = torch.sqrt(x_squred) / (0.5 + x_squred)
+    return scale * x
 
 
 class ConvLayer(nn.Module):

@@ -6,7 +6,8 @@ from keras.models import Model
 from keras.layers import *
 from keras import backend as K
 import numpy as np
-
+import tensorflow as tf
+tf.config.experimental_run_functions_eagerly(True)
 #准备训练数据
 batch_size = 128
 num_classes = 10
@@ -74,10 +75,10 @@ Y_test.sort(axis=1) #排一下序，因为只比较集合，不比较顺序
 #搭建CNN+Capsule分类模型
 input_image = Input(shape=(None,None,1))
 cnn = Conv2D(64, (3, 3), activation='relu')(input_image)
-cnn = Conv2D(64, (3, 3), activation='relu')(cnn)
+cnn = Conv2D(64, (3, 3), activation='relu')(cnn)   # 第一个卷积层
 cnn = AveragePooling2D((2,2))(cnn)
 cnn = Conv2D(128, (3, 3), activation='relu')(cnn)
-cnn = Conv2D(128, (3, 3), activation='relu')(cnn)
+cnn = Conv2D(128, (3, 3), activation='relu')(cnn)  # Primary层
 cnn = Reshape((-1, 128))(cnn)
 capsule = Capsule(10, 16, 3, True)(cnn)
 output = Lambda(lambda x: K.sqrt(K.sum(K.square(x), 2)), output_shape=(10,))(capsule)
@@ -87,7 +88,7 @@ model.compile(loss=lambda y_true,y_pred: y_true*K.relu(0.9-y_pred)**2 + 0.25*(1-
               optimizer='adam',
               metrics=['accuracy'])
 
-model.summary()
+model.summary()  # 调用summary()可以帮助您检查每个图层的输出形状
 
 model.fit(x_train, y_train,
           batch_size=batch_size,
