@@ -7,7 +7,7 @@ from keras.layers import *
 from keras import backend as K
 import numpy as np
 import tensorflow as tf
-tf.config.experimental_run_functions_eagerly(True)
+tf.config.experimental_run_functions_eagerly(True)  # kears的debug调试需要加上这行
 #准备训练数据
 batch_size = 128
 num_classes = 10

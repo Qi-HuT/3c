@@ -201,6 +201,7 @@ def main(train_type=None):
         for epoch in range(n_epoch):
             # model.train放在哪参考网址 https://blog.csdn.net/andyL_05/article/details/107004401
             model.train()
+            batch_loss = 0
             for item_idx, item in enumerate(train_iter, 0):
                 label = item[2]
                 unique_num, count = torch.unique(label, return_counts=True)  # default sorted=True
@@ -220,6 +221,7 @@ def main(train_type=None):
                 # loss = F.cross_entropy(out, label.long(), weight=weight)
                 # real time weight calculation
                 loss = F.cross_entropy(out, label.long(), weight=real_weight)
+                batch_loss = batch_loss + loss
                 # nn.CosineEmbeddingLoss() 损失函数需要是二维矩阵，而不是一维的。
                 # loss = loss_fnc(torch.unsqueeze(label_pred, dim=0), torch.unsqueeze(label.long(), dim=0), y)
                 # loss = Variable(loss, requires_grad=True)
@@ -237,6 +239,7 @@ def main(train_type=None):
                     f1 = f1_score(label.long(), train_y_pre, average='macro')
                     # print(train_y_pre, label)
                     print('epoch: %d \t item_idx: %d \t loss: %.4f \t f1: %.4f' % (epoch, item_idx, loss, f1))
+                    batch_loss = 0
             # finish each epoch val a time
             val_pre_label = []
             val_y_label = []
