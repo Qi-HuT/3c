@@ -36,7 +36,7 @@ def main():
     optimizer = optim.Adam(model.parameters(), lr=1e-3)
     criterion = ModelLoss(0.9, 0.1, 0.5)
     print(model)
-    epochs = 25
+    epochs = 30
     for epoch in range(epochs):
         model.train()
         epoch_loss = 0
