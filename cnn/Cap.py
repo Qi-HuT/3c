@@ -80,6 +80,9 @@ class FinalModel(nn.Module):
         super(FinalModel, self).__init__()
         self.embedding = nn.Embedding(vocab_size[0], vocab_size[1])
         self.cnn = nn.Conv2d(in_channels=1, out_channels=256, kernel_size=(kernel_size, vocab_size[1]), stride=1, padding=0)
+        # input shape (N, C_in, H, W)  N = batch_size C_in = in_channels(一般表示一个样本所拥有的矩阵个数，如一个句子只有一个矩阵)
+        # H 输入二维数据的高度， W 输入二维数据的宽度。在nlp中 H=word_num  W = embedding_size
+        # output shape (N, C_out, H, W) C_out = out_channels
         self.relu = nn.ReLU(inplace=True)
         self.low_layer = LowerLayer(in_channels=256, out_channels=32, lower_layer_num=8, kernel_size=(kernel_size, 1))
 

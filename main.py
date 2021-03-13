@@ -10,9 +10,10 @@ import numpy as np
 from sklearn.metrics import f1_score
 import pandas as pd
 from process_data import *
+import collections
 # import pydevd_pycharm
 # pydevd_pycharm.settrace('192.168.2.224', port=22, stdoutToServer=True, stderrToServer=True)
-
+import time
 
 def main(train_type=None):
     model_path = './model.pth'
@@ -191,13 +192,14 @@ def main(train_type=None):
         # for parameter in model.parameters():
         #     print(parameter)
         optimizer = optim.Adam(model.parameters(), lr=0.0005)
-        n_epoch = 1
+        n_epoch = 30
         best_val_f1 = 0
         # nn.CrossEntropyLoss you will give your weights only once while creating the module
         # loss_cs = nn.CrossEntropyLoss(weight=weight)
-        # loss_fnc = nn.CosineEmbeddingLoss()
+        loss_fnc = nn.CosineEmbeddingLoss(reduction='mean', size_average=True, reduce=True)
         # loss_mes = nn.MSELoss()
-        y = torch.ones(1).long()
+        one_list = torch.ones((10, 1), dtype=torch.float)
+        zero_list = torch.zeros((10, 1), dtype=torch.float)
         for epoch in range(n_epoch):
             # model.train放在哪参考网址 https://blog.csdn.net/andyL_05/article/details/107004401
             model.train()
@@ -215,12 +217,15 @@ def main(train_type=None):
                     else:
                         real_weight[i] = 1 / np.log(2.02)
                 optimizer.zero_grad()
-                out = model(item)
+                out, l_rep, r_rep = model(item)
                 # label_pred = KMeans(n_clusters=6, init=label_out).fit_predict(out)
                 # fixed weight result=0.1716
                 # loss = F.cross_entropy(out, label.long(), weight=weight)
                 # real time weight calculation
-                loss = F.cross_entropy(out, label.long(), weight=real_weight)
+                loss1 = F.cross_entropy(out, label.long(), weight=real_weight)
+                # loss2 = loss_fnc(out, l_rep, one_list)
+                loss3 = loss_fnc(out, r_rep, zero_list)
+                loss = loss1 + loss3
                 batch_loss = batch_loss + loss
                 # nn.CosineEmbeddingLoss() 损失函数需要是二维矩阵，而不是一维的。
                 # loss = loss_fnc(torch.unsqueeze(label_pred, dim=0), torch.unsqueeze(label.long(), dim=0), y)
@@ -275,12 +280,15 @@ def main(train_type=None):
             _, test_y_pre = torch.max(out, 1)
             test_pre_label.extend(val_y_pre)
             test_y_label.extend(label)
-            print('test_true_label={} test_pre_label={}'.format(label, test_y_pre))
+            # print('test_true_label={} test_pre_label={}'.format(label, test_y_pre))
             # f1 = f1_score(label.long(), test_y_pre, average='macro')
             # test_f1.append(f1)
     final_f1 = f1_score(torch.Tensor(test_y_label).long(), torch.Tensor(test_pre_label), average='macro')
     # final_f1 = np.array(test_f1).mean()
+    print(collections.Counter(torch.Tensor(test_pre_label).tolist()))
+    print(collections.Counter(torch.Tensor(test_y_label).tolist()))
     print('test f1 : %.4f' % final_f1)
+    generate_submission(torch.Tensor(test_pre_label).tolist())
     count = 0
     for i in range(len(test_pre_label)):
         if test_y_label[i] == test_pre_label[i]:
@@ -288,5 +296,18 @@ def main(train_type=None):
     print(count)
 
 
+def generate_submission(pre_list):
+    test_unique = pd.read_csv('/home/g19tka13/taskA/SDP_test.csv')
+    submission = pd.DataFrame(columns=['unique_id', 'citation_class_label'])
+    pre_label = pd.Series(pre_list)
+    submission['unique_id'] = test_unique['unique_id']
+    submission['citation_class_label'] = pre_label
+    print(submission)
+    submission.to_csv('/home/g19tka13/taskA/submission.csv', sep=',', index=False)
+
+
 if __name__ == '__main__':
-    main('self_train')
+    start_time = time.time()
+    main()
+    end_time = time.time()
+    print('Used time:', end_time - start_time)

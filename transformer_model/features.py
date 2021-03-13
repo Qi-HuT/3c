@@ -22,22 +22,26 @@ def ls_att(llist, slist, length):
     # llist = llist.cpu()
     # slist = llist.cpu()
     # length = length.cpu()
-    vector_list = []
+    pos__list = []
+    neg_list = []
     for i in range(len(length)):
         # 选择真的有用的几行
-        # sen_matrix = torch.index_select(slist[i], 0, torch.arange(0, length[i] - 1).to(device))
-        sen_matrix = torch.index_select(slist[i], 0, torch.arange(0, length[i] - 1))
+        sen_matrix = torch.index_select(slist[i], 0, torch.arange(0, length[i] - 1).to(device))
+        # sen_matrix = torch.index_select(slist[i], 0, torch.arange(0, length[i] - 1))
         l_matrix = llist[i]
         dot_value = sen_matrix.mm(l_matrix.t())
         value, index = torch.topk(dot_value, k=5, dim=0, largest=True)
         index = torch.squeeze(index)
         select_value = torch.index_select(sen_matrix, 0, torch.squeeze(index))
+        # sen_matrix_np = sen_matrix.numpy()
+        # index_np = index.numpu()
+        # neg_matrix = torch.from_numpy(np.delete(sen_matrix_np, index_np, axis=0))
         final_matrix = select_value * value
-        vector = torch.sum(final_matrix, dim=0)
-        vector_list.append(vector)
-    # representation = torch.stack(vector_list).to(device)
-    representation = torch.stack(vector_list)
-    return representation
+        pos_vector = torch.sum(final_matrix, dim=0)
+        pos__list.append(pos_vector)
+    pos_rep = torch.stack(pos__list).to(device)
+    # representation = torch.stack(vector_list)
+    return pos_rep
 
 
 class TransformerGetFeatures(nn.Module):

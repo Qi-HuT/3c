@@ -133,6 +133,9 @@ ce_loss = nn.CrossEntropyLoss()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else 'cpu')
 # transformer_model.to(device=device)
+# if torch.cuda.device_count() > 1:
+#     print("Let's use", torch.cuda.device_count(), "GPUs!")
+#     transformer_model = nn.DataParallel(transformer_model)
 tokenizer = TransfoXLTokenizer.from_pretrained('transfo-xl-wt103')
 tokenizer.pad_token = '[PAD]'
 

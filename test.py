@@ -12,11 +12,11 @@ from pathlib import Path
 from sklearn.metrics import f1_score
 from sklearn.neural_network import MLPClassifier
 from sklearn.cluster import KMeans
-import nltk
+# import nltk
 # import findsenten
-import jsonlines
+# import jsonlines
 import re
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 # text = "Sentiment analysis is a challenging subject in machine learning.\
@@ -411,3 +411,26 @@ print(torch.stack(li))
 
 one = torch.ones((10, 1), dtype=torch.float)
 print(one)
+
+idx = list(range(100))
+y = list(range(100))
+print('idx',idx)
+num_step = 100 // 10 + 1
+by = None
+for i in range(num_step):
+    by = [y[i] for i in idx[i * 10: (i+1)*10]]
+    bidx = idx[i * 10: (i + 1)*10]
+    print(bidx)
+    print(by)
+
+a = torch.randn(10 ,4)
+print(a)
+a_np = a.numpy()
+print(torch.from_numpy(np.delete(a_np, [2, 5], axis=0)))
+print(a)
+
+a = torch.Tensor([1, 2, 3])
+for i in range(3):
+    print(a[i])
+a = [1 ,2 ,3]
+print(torch.arange(0, 5))
