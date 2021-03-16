@@ -13,8 +13,11 @@ import collections
 import torch.nn as nn
 import torch.utils.data as Data
 import torch
+from nltk.corpus import stopwords
 
-
+stop_words = stopwords.words('english')
+stop_words.extend(['et', 'al'])
+data_path = Path('/home/g19tka13/taskA')
 # def remodel_sentence(sentence):
 #     # sentence = re.sub(r"#Author_Tag", "#Author#Tag", sentence)
 #     sentence = findsenten.sub(r"[^A-Za-z0-9(),:!?_\'\`#]", " ", sentence)
@@ -39,11 +42,11 @@ def strtolist():
             load train val data
     :return: the content of data str to list
     '''
-    print('Loading data')
-    data_path = Path('/home/g19tka13/taskA')
-    taskA_data = data_path / 'train.csv'
+    print('Loading train data')
+    # data_path = Path('/home/g19tka13/taskA')
+    taskA_train_data = data_path / 'train.csv'
     # taskA_data = None
-    df = pd.read_csv(taskA_data, sep=',')
+    df = pd.read_csv(taskA_train_data, sep=',')
     df = df.sample(frac=1).reset_index(drop=True)
     total_instance_num = float(df.shape[0])
     print(df.shape)
@@ -68,18 +71,26 @@ def strtolist():
         # df.loc[index, 'citation_context'] = remodel_sentence(raw['citation_context']).split()  # 修改值错误,因为两者长度不一致.
         # class_array[raw['citation_class_label']] = 1
         # if raw['citation_class_label'] not in
-        train_data.loc[index] = {"unique_id": raw['unique_id'], 'core_id': raw['core_id'], 'citing_title': raw['citing_title'],
-                                 'citing_author': raw['citing_author'], 'cited_title': raw['cited_title'], 'cited_author': raw['cited_author'],
-                                 'citation_context': nltk.word_tokenize(raw['citation_context'].lower()), 'citation_class_label': raw['citation_class_label']}
+        cited_author = raw['cited_author'].lower()
+        citation_text = re.sub(r"#AUTHOR_TAG", cited_author, raw['citation_context'].lower())
+        citation_text = re.sub(r'[^a-zA-Z]', ' ', citation_text)  # 删除无用的数据如何数字 标点符号之类
+        citation_text = nltk.word_tokenize(citation_text)
+        citation_text = [word for word in citation_text if word not in stop_words]
+        train_data.loc[index] = {"unique_id": raw['unique_id'], 'core_id': raw['core_id'],
+                                 'citing_title': raw['citing_title'], 'citing_author': raw['citing_author'],
+                                 'cited_title': raw['cited_title'], 'cited_author': raw['cited_author'],
+                                 'citation_context': citation_text, 'citation_class_label': raw['citation_class_label']}
         # class_array[raw['citation_class_label']] = 0
         # print(remodel_sentence(raw['citation_context']))
         # print(nltk.word_tokenize(getattr(raw, 'citation_context')))
+    print(10 * '=', "real_train", 10 * '=')
+    print(train_data.head(int(df.shape[0] * 0.8))['citation_class_label'].value_counts())
+    print(10 * '=', "real_train", 10 * '=')
     return train_data, weighted
 
 
 def loadtestdata():
     print('Loading test data')
-    data_path = Path('/home/g19tka13/taskA')
     taskA_test_data = data_path / 'test.csv'
     test_df = pd.read_csv(taskA_test_data, sep=',').merge(pd.read_csv(str(taskA_test_data).replace('test', 'sample_submission')), on='unique_id')
     test_df = test_df.sample(frac=1).reset_index(drop=True)
@@ -87,10 +98,13 @@ def loadtestdata():
     # test_df = test_df.loc[test_df['citation_class_label'] == 0].reset_index(drop=True)  # drop去除原来的索引
     test_df_header = test_df.columns
     test_data = pd.DataFrame(columns=list(test_df_header))
-    label = ['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses']
+    label = ['background', 'compares', 'extension', 'future', 'motivation', 'uses']
     for index, raw in test_df.iterrows():
         label_word = str(label[raw['citation_class_label']])
-        citation_text = re.sub(r"#AUTHOR_TAG", label_word, raw['citation_context'].lower())
+        cited_author = raw['cited_author'].lower()
+        # citation_text = re.sub(r"#AUTHOR_TAG", label_word, raw['citation_context'].lower())
+        citation_text = re.sub(r"#AUTHOR_TAG", cited_author, raw['citation_context'].lower())
+        citation_text = re.sub(r'[^a-zA-Z]', ' ', citation_text)
         citation_text = nltk.word_tokenize(citation_text)
         # print(label_word)
         test_data.loc[index] = {"unique_id": raw['unique_id'], 'core_id': raw['core_id'], 'citing_title': raw['citing_title'],
@@ -175,7 +189,7 @@ def assemble(data, vocabulary, num, prelabeled_data=None, unlabeled_data=None):
     preunlabel_data = None
     unlabel_iter = None
     max_text_len_final = None
-    label = ['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses']
+    label = ['background', 'compares', 'extension', 'future', 'motivation', 'uses']
     if num == 1:
         text_data = data['citation_context']
         label_data = data['citation_class_label']
@@ -187,11 +201,14 @@ def assemble(data, vocabulary, num, prelabeled_data=None, unlabeled_data=None):
         val_sen_len = []
         train_label = []
         val_label = []
+        label_to_index = vocabulary.stoi['<pad>'] * np.ones([6, 1], dtype=np.int64)
+        for i in range(len(label)):
+            label_to_index[i, :1] = [vocabulary.stoi[label[i]] if label[i] in vocabulary.stoi else vocabulary.stoi['<unk>']]
         # wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones([len(text_data), max_text_len], dtype=np.int64)  # word_to_index
         if prelabeled_data is not None:
             # max_text_len = if np.array([len(sentence) for sentence in text_data])
             unlabeled_text = prelabeled_data['citation']  # 外部数据引文
-            preunlabel_data = prelabeled_data['citation_class_label'] # 外部数据标签
+            preunlabel_data = prelabeled_data['citation_class_label']  # 外部数据标签
             unlabeled_text_max = max(np.array([len(sentence) for sentence in unlabeled_text]))  # 外部引文的最大长度
             max_text_len_final = max_text_len if unlabeled_text_max < max_text_len else unlabeled_text_max # 比较训练集和外部引文的最大长度
             train_wtoi_matrix = vocabulary.stoi['<pad>'] * np.ones(
@@ -228,7 +245,7 @@ def assemble(data, vocabulary, num, prelabeled_data=None, unlabeled_data=None):
         print(torch.from_numpy(train_wtoi_matrix).shape, torch.Tensor(train_sen_len).shape, torch.Tensor(train_label).shape, torch.from_numpy(label_wtoi_matrix).shape)
         train_iter = Data.TensorDataset(torch.from_numpy(train_wtoi_matrix), torch.Tensor(train_sen_len), torch.Tensor(train_label), torch.from_numpy(label_wtoi_matrix))
         val_iter = Data.TensorDataset(torch.from_numpy(val_wtoi_matrix), torch.Tensor(val_sen_len), torch.Tensor(val_label))
-        return train_iter, val_iter, np.unique(label_wtoi_matrix)
+        return train_iter, val_iter, np.unique(label_wtoi_matrix), torch.LongTensor(label_to_index)
     else:
         text_data = data['citation_context']
         label_data = data['citation_class_label']
@@ -283,7 +300,7 @@ def count_all_words(data):
 
 def load_word_vector(train_data, test_data, train_type=None, used_unlabeled_data=None):
 
-    label_vector = pd.Series(['background', 'compares', 'contrasts', 'extension', 'future', 'motivation', 'uses'])
+    label_vector = pd.Series(['background', 'compares', 'extension', 'future', 'motivation', 'uses'])
     # Download word vector
     print('Loading word vectors')
     path = os.path.join('/home/g19tka13/wordvector', 'wiki.en.vec')

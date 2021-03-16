@@ -433,4 +433,17 @@ a = torch.Tensor([1, 2, 3])
 for i in range(3):
     print(a[i])
 a = [1 ,2 ,3]
-print(torch.arange(0, 5))
+# print(torch.arange(0, 5))
+
+# a += [4, 5, 6]
+# a.extend([4, 5, 6])
+a.append([4, 5, 6])
+print(a)
+
+for index, i in enumerate(a, 0):
+    print(index, i)
+
+t = torch.randn((2, 1, 3))
+print(t)
+print(t.shape)
+print(torch.squeeze(t))

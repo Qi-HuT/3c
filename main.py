@@ -14,6 +14,36 @@ import collections
 # import pydevd_pycharm
 # pydevd_pycharm.settrace('192.168.2.224', port=22, stdoutToServer=True, stderrToServer=True)
 import time
+from sklearn.metrics import confusion_matrix
+
+batch_size = 16
+
+def confusion(sen, label, length_list, instance_l_list):
+    pos_list = []
+    neg_list = []
+    for i in range(len(length_list)):
+        sen_matrix = torch.index_select(sen[i], 0, torch.arange(0, int(length_list[i])))
+        # print(label)
+        word_l = torch.mm(sen_matrix, label.t())
+        _, max_index = torch.max(word_l, dim=1)
+        pos_index_list = []
+        neg_index_list = []
+        for index, item in enumerate(max_index, 0):
+            if item == instance_l_list[i]:
+                pos_index_list.append(index)
+            else:
+                neg_index_list.append(index)
+        pos_index_t = torch.LongTensor(pos_index_list)
+        neg_index_t = torch.LongTensor(neg_index_list)
+        pos_m = torch.index_select(word_l, 0, pos_index_t)
+        neg_m = torch.index_select(word_l, 0, neg_index_t)
+        pos_v = torch.sum(pos_m, dim=0)
+        neg_v = torch.sum(neg_m, dim=0)
+        pos_list.append(pos_v)
+        neg_list.append(neg_v)
+    pos_rep = torch.stack(pos_list)
+    neg_rep = torch.stack(neg_list)
+    return pos_rep, neg_rep
 
 def main(train_type=None):
     model_path = './model.pth'
@@ -172,34 +202,33 @@ def main(train_type=None):
             if len(preudo_list) != 0:
                 unlabeled_data, prelabel_data = split_unlabeled_data(unlabeled_data, delete_id, class_id, prelabel_data)
     else:
-        train_iter, val_iter, label_word_id = assemble(train_data, vocab, 1)
+        train_iter, val_iter, label_word_id, label_to_id = assemble(train_data, vocab, 1)
         test_iter, unlabel_iter = assemble(test_data, vocab, 0)
-        print('test_iter', test_iter)
         # train_iter, val_iter, test_iter, vocab, weight, label_word_id = load_data()
         weight = torch.tensor(weighted)
-        train_iter = Data.DataLoader(train_iter, batch_size=10, shuffle=True)
-        val_iter = Data.DataLoader(val_iter, batch_size=10, shuffle=True)
-        test_iter = Data.DataLoader(test_iter, batch_size=10, shuffle=False)
+        train_iter = Data.DataLoader(train_iter, batch_size=batch_size, shuffle=True)
+        val_iter = Data.DataLoader(val_iter, batch_size=batch_size, shuffle=True)
+        test_iter = Data.DataLoader(test_iter, batch_size=batch_size, shuffle=False)
         vocab_size = vocab.vectors.size()
         print('Total num. of words: {}, word vector dimension: {}'.format(
             vocab_size[0],
             vocab_size[1]))
-        model = LSTM(vocab_size[0], vocab_size[1], hidden_size=100, num_layers=2, batch=10)
+        model = LSTM(vocab_size[0], vocab_size[1], hidden_size=100, num_layers=2, batch=batch_size)
         model.embedding.weight.data = vocab.vectors
         model.embedding.weight.requires_grad = False
         print(model)
         # print(model.parameters())
         # for parameter in model.parameters():
         #     print(parameter)
-        optimizer = optim.Adam(model.parameters(), lr=0.0005)
-        n_epoch = 30
+        optimizer = optim.Adam(model.parameters(), lr=0.001)
+        n_epoch = 50
         best_val_f1 = 0
         # nn.CrossEntropyLoss you will give your weights only once while creating the module
         # loss_cs = nn.CrossEntropyLoss(weight=weight)
         loss_fnc = nn.CosineEmbeddingLoss(reduction='mean', size_average=True, reduce=True)
         # loss_mes = nn.MSELoss()
-        one_list = torch.ones((10, 1), dtype=torch.float)
-        zero_list = torch.zeros((10, 1), dtype=torch.float)
+        one_list = torch.ones((batch_size, 1), dtype=torch.float)
+        zero_list = torch.zeros((batch_size, 1), dtype=torch.float)
         for epoch in range(n_epoch):
             # model.train放在哪参考网址 https://blog.csdn.net/andyL_05/article/details/107004401
             model.train()
@@ -213,20 +242,22 @@ def main(train_type=None):
                 for i in range(6):
                     if i in unique_num:
                         idx = unique_num.index(i)
-                        real_weight[i] = 1 / np.log(1.02 + count[idx] / 10)
+                        real_weight[i] = 1 / np.log(1.02 + count[idx] / batch_size)
                     else:
                         real_weight[i] = 1 / np.log(2.02)
                 optimizer.zero_grad()
-                out, l_rep, r_rep = model(item)
+                # out, p_rep, n_rep = model(item, label_to_id)
+                out, out_o, label_matrix, out_len, label_id = model(item, label_to_id)
                 # label_pred = KMeans(n_clusters=6, init=label_out).fit_predict(out)
                 # fixed weight result=0.1716
                 # loss = F.cross_entropy(out, label.long(), weight=weight)
                 # real time weight calculation
+                p_rep, n_rep = confusion(out_o, label_matrix, out_len, label_id)
                 loss1 = F.cross_entropy(out, label.long(), weight=real_weight)
-                # loss2 = loss_fnc(out, l_rep, one_list)
-                loss3 = loss_fnc(out, r_rep, zero_list)
-                loss = loss1 + loss3
-                batch_loss = batch_loss + loss
+                loss2 = loss_fnc(out, p_rep, one_list)
+                loss3 = loss_fnc(out, n_rep, zero_list)
+                loss = loss1 + loss2 + loss3
+                # batch_loss = batch_loss + +loss2 + loss
                 # nn.CosineEmbeddingLoss() 损失函数需要是二维矩阵，而不是一维的。
                 # loss = loss_fnc(torch.unsqueeze(label_pred, dim=0), torch.unsqueeze(label.long(), dim=0), y)
                 # loss = Variable(loss, requires_grad=True)
@@ -244,7 +275,7 @@ def main(train_type=None):
                     f1 = f1_score(label.long(), train_y_pre, average='macro')
                     # print(train_y_pre, label)
                     print('epoch: %d \t item_idx: %d \t loss: %.4f \t f1: %.4f' % (epoch, item_idx, loss, f1))
-                    batch_loss = 0
+                    # batch_loss = 0
             # finish each epoch val a time
             val_pre_label = []
             val_y_label = []
@@ -277,23 +308,36 @@ def main(train_type=None):
         for item_idx, item in enumerate(test_iter, 0):
             label = item[2]
             out = model(item)
-            _, test_y_pre = torch.max(out, 1)
-            test_pre_label.extend(val_y_pre)
+            _, test_pre = torch.max(out, 1)
+            test_pre_label.extend(test_pre)
             test_y_label.extend(label)
             # print('test_true_label={} test_pre_label={}'.format(label, test_y_pre))
             # f1 = f1_score(label.long(), test_y_pre, average='macro')
             # test_f1.append(f1)
     final_f1 = f1_score(torch.Tensor(test_y_label).long(), torch.Tensor(test_pre_label), average='macro')
     # final_f1 = np.array(test_f1).mean()
-    print(collections.Counter(torch.Tensor(test_pre_label).tolist()))
-    print(collections.Counter(torch.Tensor(test_y_label).tolist()))
+    print('test_pre_label', collections.Counter(torch.Tensor(test_pre_label).tolist()))
+    print('test_y_label', collections.Counter(torch.Tensor(test_y_label).tolist()))
     print('test f1 : %.4f' % final_f1)
     generate_submission(torch.Tensor(test_pre_label).tolist())
-    count = 0
-    for i in range(len(test_pre_label)):
-        if test_y_label[i] == test_pre_label[i]:
-            count += 1
+    count = {}
+    test_pre = torch.Tensor(test_pre_label).tolist()
+    test_true = torch.Tensor(test_y_label).tolist()
+    c_matrxi = confusion_matrix(test_true, test_pre, labels=[0, 1, 2, 3, 4, 5])
+    print(c_matrxi)
+    for i in range(len(test_true)):
+        if test_true[i] == test_pre[i]:
+            if test_true[i] not in count.keys():
+                count[test_true[i]] = 1
+            else:
+                count[test_true[i]] = count[test_true[i]] + 1
     print(count)
+    pre_true = pd.DataFrame(columns=['true_id', 'pre_id'])
+    test_true_ser = pd.Series(test_true)
+    test_pre_ser = pd.Series(test_pre)
+    pre_true['true_id'] = test_true_ser
+    pre_true['pre_id'] = test_pre_ser
+    pre_true.to_csv('/home/g19tka13/taskA/true_predict.csv', sep=',', index=False)
 
 
 def generate_submission(pre_list):
@@ -302,7 +346,7 @@ def generate_submission(pre_list):
     pre_label = pd.Series(pre_list)
     submission['unique_id'] = test_unique['unique_id']
     submission['citation_class_label'] = pre_label
-    print(submission)
+    # print(submission)
     submission.to_csv('/home/g19tka13/taskA/submission.csv', sep=',', index=False)
 
 
